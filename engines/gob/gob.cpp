@@ -27,37 +27,37 @@
 
 #include "common/debug-channels.h"
 
+#include "audio/mididrv.h"
+#include "audio/mixer.h"
 #include "backends/audiocd/audiocd.h"
 #include "base/plugins.h"
 #include "common/config-manager.h"
 #include "engines/util.h"
-#include "audio/mididrv.h"
-#include "audio/mixer.h"
 
-#include "gui/gui-manager.h"
 #include "gui/dialog.h"
+#include "gui/gui-manager.h"
 #include "gui/widget.h"
 
-#include "gob/gob.h"
-#include "gob/global.h"
-#include "gob/util.h"
 #include "gob/dataio.h"
+#include "gob/draw.h"
 #include "gob/game.h"
-#include "gob/sound/sound.h"
+#include "gob/global.h"
+#include "gob/gob.h"
+#include "gob/goblin.h"
 #include "gob/init.h"
 #include "gob/inter.h"
-#include "gob/draw.h"
-#include "gob/goblin.h"
 #include "gob/map.h"
 #include "gob/mult.h"
 #include "gob/palanim.h"
-#include "gob/scenery.h"
-#include "gob/videoplayer.h"
 #include "gob/save/saveload.h"
+#include "gob/scenery.h"
+#include "gob/sound/sound.h"
+#include "gob/util.h"
+#include "gob/videoplayer.h"
 
-#include "gob/pregob/pregob.h"
 #include "gob/pregob/onceupon/abracadabra.h"
 #include "gob/pregob/onceupon/babayaga.h"
+#include "gob/pregob/pregob.h"
 
 namespace Gob {
 
@@ -74,9 +74,7 @@ const Common::Language GobEngine::_gobToScummVMLang[] = {
 	Common::KO_KOR,
 	Common::HE_ISR,
 	Common::PT_BRA,
-	Common::JA_JPN
-};
-
+	Common::JA_JPN};
 
 class PauseDialog : public GUI::Dialog {
 public:
@@ -95,7 +93,7 @@ PauseDialog::PauseDialog() : GUI::Dialog(0, 0, 0, 0) {
 
 	_message = "Game paused. Press Ctrl+p again to continue.";
 	_text = new GUI::StaticTextWidget(this, 4, 0, 10, 10,
-			_message, Graphics::kTextAlignCenter);
+									  _message, Graphics::kTextAlignCenter);
 }
 
 void PauseDialog::reflowLayout() {
@@ -119,25 +117,35 @@ void PauseDialog::handleKeyDown(Common::KeyState state) {
 		close();
 }
 
-
 GobEngine::GobEngine(OSystem *syst) : Engine(syst), _rnd("gob") {
-	_sound     = nullptr; _mult     = nullptr; _game    = nullptr;
-	_global    = nullptr; _dataIO   = nullptr; _goblin  = nullptr;
-	_vidPlayer = nullptr; _init     = nullptr; _inter   = nullptr;
-	_map       = nullptr; _palAnim  = nullptr; _scenery = nullptr;
-	_draw      = nullptr; _util     = nullptr; _video   = nullptr;
-	_saveLoad  = nullptr; _preGob   = nullptr;
+	_sound = nullptr;
+	_mult = nullptr;
+	_game = nullptr;
+	_global = nullptr;
+	_dataIO = nullptr;
+	_goblin = nullptr;
+	_vidPlayer = nullptr;
+	_init = nullptr;
+	_inter = nullptr;
+	_map = nullptr;
+	_palAnim = nullptr;
+	_scenery = nullptr;
+	_draw = nullptr;
+	_util = nullptr;
+	_video = nullptr;
+	_saveLoad = nullptr;
+	_preGob = nullptr;
 
 	_pauseStart = 0;
 
 	// Setup mixer
-	bool muteSFX   = ConfMan.getBool("mute") || ConfMan.getBool("sfx_mute");
+	bool muteSFX = ConfMan.getBool("mute") || ConfMan.getBool("sfx_mute");
 	bool muteMusic = ConfMan.getBool("mute") || ConfMan.getBool("music_mute");
 
 	_mixer->setVolumeForSoundType(Audio::Mixer::kSFXSoundType,
-			muteSFX   ? 0 : ConfMan.getInt("sfx_volume"));
+								  muteSFX ? 0 : ConfMan.getInt("sfx_volume"));
 	_mixer->setVolumeForSoundType(Audio::Mixer::kMusicSoundType,
-			muteMusic ? 0 : ConfMan.getInt("music_volume"));
+								  muteMusic ? 0 : ConfMan.getInt("music_volume"));
 
 	_copyProtection = ConfMan.getBool("copy_protection");
 
@@ -162,7 +170,7 @@ void GobEngine::validateLanguage() {
 				getLangDesc(_global->_languageWanted));
 
 		if (((_global->_languageWanted == 2) && (_global->_language == 5)) ||
-		    ((_global->_languageWanted == 5) && (_global->_language == 2)))
+			((_global->_languageWanted == 5) && (_global->_language == 2)))
 			warning("Using %s instead", getLangDesc(_global->_language));
 		else
 			warning("Using the first language available: %s",
@@ -174,7 +182,7 @@ void GobEngine::validateLanguage() {
 
 void GobEngine::validateVideoMode(int16 videoMode) {
 	if ((videoMode != 0x10) && (videoMode != 0x13) &&
-		  (videoMode != 0x14) && (videoMode != 0x18))
+		(videoMode != 0x14) && (videoMode != 0x18))
 		error("Video mode 0x%X is not supported", videoMode);
 }
 
@@ -184,8 +192,8 @@ EndiannessMethod GobEngine::getEndiannessMethod() const {
 
 Endianness GobEngine::getEndianness() const {
 	if ((getPlatform() == Common::kPlatformAmiga) ||
-	    (getPlatform() == Common::kPlatformMacintosh) ||
-	    (getPlatform() == Common::kPlatformAtariST))
+		(getPlatform() == Common::kPlatformMacintosh) ||
+		(getPlatform() == Common::kPlatformAtariST))
 		return kEndiannessBE;
 
 	return kEndiannessLE;
@@ -309,8 +317,7 @@ Common::Error GobEngine::run() {
 
 	// On some systems it's not safe to run CD audio games from the CD.
 	if (isCD()) {
-		if (!existExtractedCDAudioFiles()
-		    && !isDataAndCDAudioReadFromSameCD()) {
+		if (!existExtractedCDAudioFiles() && !isDataAndCDAudioReadFromSameCD()) {
 			warnMissingExtractedCDAudio();
 		}
 	}
@@ -416,6 +423,19 @@ void GobEngine::syncSoundSettings() {
 		_sound->adlibSyncVolume();
 }
 
+std::vector<Common::Rect> GobEngine::mgoGetHotspots() {
+	// This function is not implemented in the original code.
+	// It should return a vector of Common::Rect objects representing the hotspots.
+	std::vector<Common::Rect> hotspots;
+	hotspots.push_back(Common::Rect(10, 20, 20, 30));
+	hotspots.push_back(Common::Rect(50, 60, 60, 70));
+	hotspots.push_back(Common::Rect(100, 110, 110, 120));
+	hotspots.push_back(Common::Rect(150, 160, 160, 170));
+	hotspots.push_back(Common::Rect(200, 210, 210, 220));
+
+	return hotspots;
+}
+
 void GobEngine::pauseGame() {
 	pauseEngineIntern(true);
 
@@ -434,24 +454,24 @@ Common::Error GobEngine::initGameParts() {
 
 	_endiannessMethod = kEndiannessMethodSystem;
 
-	_global    = new Global(this);
-	_util      = new Util(this);
-	_dataIO    = new DataIO();
-	_palAnim   = new PalAnim(this);
+	_global = new Global(this);
+	_util = new Util(this);
+	_dataIO = new DataIO();
+	_palAnim = new PalAnim(this);
 	_vidPlayer = new VideoPlayer(this);
-	_sound     = new Sound(this);
-	_game      = new Game(this);
+	_sound = new Sound(this);
+	_game = new Game(this);
 
 	switch (_gameType) {
 	case kGameTypeGob1:
-		_init     = new Init_v1(this);
-		_video    = new Video_v1(this);
-		_inter    = new Inter_v1(this);
-		_mult     = new Mult_v1(this);
-		_draw     = new Draw_v1(this);
-		_map      = new Map_v1(this);
-		_goblin   = new Goblin_v1(this);
-		_scenery  = new Scenery_v1(this);
+		_init = new Init_v1(this);
+		_video = new Video_v1(this);
+		_inter = new Inter_v1(this);
+		_mult = new Mult_v1(this);
+		_draw = new Draw_v1(this);
+		_map = new Map_v1(this);
+		_goblin = new Goblin_v1(this);
+		_scenery = new Scenery_v1(this);
 
 		// WORKAROUND: The EGA version of Gobliiins claims a few resources are
 		//             larger than they actually are. The original happily reads
@@ -472,66 +492,66 @@ Common::Error GobEngine::initGameParts() {
 		break;
 
 	case kGameTypeGeisha:
-		_init     = new Init_Geisha(this);
-		_video    = new Video_v1(this);
-		_inter    = new Inter_Geisha(this);
-		_mult     = new Mult_v1(this);
-		_draw     = new Draw_v1(this);
-		_map      = new Map_v1(this);
-		_goblin   = new Goblin_v1(this);
-		_scenery  = new Scenery_v1(this);
+		_init = new Init_Geisha(this);
+		_video = new Video_v1(this);
+		_inter = new Inter_Geisha(this);
+		_mult = new Mult_v1(this);
+		_draw = new Draw_v1(this);
+		_map = new Map_v1(this);
+		_goblin = new Goblin_v1(this);
+		_scenery = new Scenery_v1(this);
 		_saveLoad = new SaveLoad_Geisha(this, _targetName.c_str());
 
 		_endiannessMethod = kEndiannessMethodAltFile;
 		break;
 
 	case kGameTypeFascination:
-		_init     = new Init_Fascination(this);
-		_video    = new Video_v2(this);
-		_inter    = new Inter_Fascination(this);
-		_mult     = new Mult_v2(this);
-		_draw     = new Draw_Fascination(this);
-		_map      = new Map_v2(this);
-		_goblin   = new Goblin_v2(this);
-		_scenery  = new Scenery_v2(this);
+		_init = new Init_Fascination(this);
+		_video = new Video_v2(this);
+		_inter = new Inter_Fascination(this);
+		_mult = new Mult_v2(this);
+		_draw = new Draw_Fascination(this);
+		_map = new Map_v2(this);
+		_goblin = new Goblin_v2(this);
+		_scenery = new Scenery_v2(this);
 		_saveLoad = new SaveLoad_Fascination(this, _targetName.c_str());
 		break;
 
 	case kGameTypeWeen:
 	case kGameTypeGob2:
 	case kGameTypeCrousti:
-		_init     = new Init_v2(this);
-		_video    = new Video_v2(this);
-		_inter    = new Inter_v2(this);
-		_mult     = new Mult_v2(this);
-		_draw     = new Draw_v2(this);
-		_map      = new Map_v2(this);
-		_goblin   = new Goblin_v2(this);
-		_scenery  = new Scenery_v2(this);
+		_init = new Init_v2(this);
+		_video = new Video_v2(this);
+		_inter = new Inter_v2(this);
+		_mult = new Mult_v2(this);
+		_draw = new Draw_v2(this);
+		_map = new Map_v2(this);
+		_goblin = new Goblin_v2(this);
+		_scenery = new Scenery_v2(this);
 		_saveLoad = new SaveLoad_v2(this, _targetName.c_str());
 		break;
 
 	case kGameTypeBargon:
-		_init     = new Init_v2(this);
-		_video    = new Video_v2(this);
-		_inter    = new Inter_Bargon(this);
-		_mult     = new Mult_v2(this);
-		_draw     = new Draw_Bargon(this);
-		_map      = new Map_v2(this);
-		_goblin   = new Goblin_v2(this);
-		_scenery  = new Scenery_v2(this);
+		_init = new Init_v2(this);
+		_video = new Video_v2(this);
+		_inter = new Inter_Bargon(this);
+		_mult = new Mult_v2(this);
+		_draw = new Draw_Bargon(this);
+		_map = new Map_v2(this);
+		_goblin = new Goblin_v2(this);
+		_scenery = new Scenery_v2(this);
 		_saveLoad = new SaveLoad_v2(this, _targetName.c_str());
 		break;
 
 	case kGameTypeLittleRed:
-		_init     = new Init_v2(this);
-		_video    = new Video_v2(this);
-		_inter    = new Inter_LittleRed(this);
-		_mult     = new Mult_v2(this);
-		_draw     = new Draw_v2(this);
-		_map      = new Map_v2(this);
-		_goblin   = new Goblin_v2(this);
-		_scenery  = new Scenery_v2(this);
+		_init = new Init_v2(this);
+		_video = new Video_v2(this);
+		_inter = new Inter_LittleRed(this);
+		_mult = new Mult_v2(this);
+		_draw = new Draw_v2(this);
+		_map = new Map_v2(this);
+		_goblin = new Goblin_v2(this);
+		_scenery = new Scenery_v2(this);
 
 		// WORKAROUND: Little Red Riding Hood has a small resource size glitch in the
 		//             screen where Little Red needs to find the animals' homes.
@@ -539,137 +559,137 @@ Common::Error GobEngine::initGameParts() {
 		break;
 
 	case kGameTypeGob3:
-		_init     = new Init_v3(this);
-		_video    = new Video_v2(this);
-		_inter    = new Inter_v3(this);
-		_mult     = new Mult_v2(this);
-		_draw     = new Draw_v2(this);
-		_map      = new Map_v2(this);
-		_goblin   = new Goblin_v3(this);
-		_scenery  = new Scenery_v2(this);
+		_init = new Init_v3(this);
+		_video = new Video_v2(this);
+		_inter = new Inter_v3(this);
+		_mult = new Mult_v2(this);
+		_draw = new Draw_v2(this);
+		_map = new Map_v2(this);
+		_goblin = new Goblin_v3(this);
+		_scenery = new Scenery_v2(this);
 		_saveLoad = new SaveLoad_v3(this, _targetName.c_str(), SaveLoad_v3::kScreenshotTypeGob3);
 		break;
 
 	case kGameTypeInca2:
-		_init     = new Init_v3(this);
-		_video    = new Video_v2(this);
-		_inter    = new Inter_Inca2(this);
-		_mult     = new Mult_v2(this);
-		_draw     = new Draw_v2(this);
-		_map      = new Map_v2(this);
-		_goblin   = new Goblin_v3(this);
-		_scenery  = new Scenery_v2(this);
+		_init = new Init_v3(this);
+		_video = new Video_v2(this);
+		_inter = new Inter_Inca2(this);
+		_mult = new Mult_v2(this);
+		_draw = new Draw_v2(this);
+		_map = new Map_v2(this);
+		_goblin = new Goblin_v3(this);
+		_scenery = new Scenery_v2(this);
 		_saveLoad = new SaveLoad_Inca2(this, _targetName.c_str());
 		break;
 
 	case kGameTypeLostInTime:
-		_init     = new Init_v3(this);
-		_video    = new Video_v2(this);
-		_inter    = new Inter_v3(this);
-		_mult     = new Mult_v2(this);
-		_draw     = new Draw_v2(this);
-		_map      = new Map_v2(this);
-		_goblin   = new Goblin_v3(this);
-		_scenery  = new Scenery_v2(this);
+		_init = new Init_v3(this);
+		_video = new Video_v2(this);
+		_inter = new Inter_v3(this);
+		_mult = new Mult_v2(this);
+		_draw = new Draw_v2(this);
+		_map = new Map_v2(this);
+		_goblin = new Goblin_v3(this);
+		_scenery = new Scenery_v2(this);
 		_saveLoad = new SaveLoad_v3(this, _targetName.c_str(), SaveLoad_v3::kScreenshotTypeLost);
 		break;
 
 	case kGameTypeWoodruff:
-		_init     = new Init_v4(this);
-		_video    = new Video_v2(this);
-		_inter    = new Inter_v4(this);
-		_mult     = new Mult_v2(this);
-		_draw     = new Draw_v2(this);
-		_map      = new Map_v2(this);
-		_goblin   = new Goblin_v4(this);
-		_scenery  = new Scenery_v2(this);
+		_init = new Init_v4(this);
+		_video = new Video_v2(this);
+		_inter = new Inter_v4(this);
+		_mult = new Mult_v2(this);
+		_draw = new Draw_v2(this);
+		_map = new Map_v2(this);
+		_goblin = new Goblin_v4(this);
+		_scenery = new Scenery_v2(this);
 		_saveLoad = new SaveLoad_v4(this, _targetName.c_str());
 		break;
 
 	case kGameTypeDynasty:
 	case kGameTypeDynastyWood:
-		_init     = new Init_v3(this);
-		_video    = new Video_v2(this);
-		_inter    = new Inter_v5(this);
-		_mult     = new Mult_v2(this);
-		_draw     = new Draw_v2(this);
-		_map      = new Map_v2(this);
-		_goblin   = new Goblin_v4(this);
-		_scenery  = new Scenery_v2(this);
+		_init = new Init_v3(this);
+		_video = new Video_v2(this);
+		_inter = new Inter_v5(this);
+		_mult = new Mult_v2(this);
+		_draw = new Draw_v2(this);
+		_map = new Map_v2(this);
+		_goblin = new Goblin_v4(this);
+		_scenery = new Scenery_v2(this);
 		_saveLoad = new SaveLoad(this);
 		break;
 
 	case kGameTypeUrban:
-		_init     = new Init_v6(this);
-		_video    = new Video_v6(this);
-		_inter    = new Inter_v6(this);
-		_mult     = new Mult_v2(this);
-		_draw     = new Draw_v2(this);
-		_map      = new Map_v2(this);
-		_goblin   = new Goblin_v4(this);
-		_scenery  = new Scenery_v2(this);
+		_init = new Init_v6(this);
+		_video = new Video_v6(this);
+		_inter = new Inter_v6(this);
+		_mult = new Mult_v2(this);
+		_draw = new Draw_v2(this);
+		_map = new Map_v2(this);
+		_goblin = new Goblin_v4(this);
+		_scenery = new Scenery_v2(this);
 		_saveLoad = new SaveLoad_v6(this, _targetName.c_str());
 		break;
 
 	case kGameTypePlaytoons:
 	case kGameTypeBambou:
-		_init     = new Init_v2(this);
-		_video    = new Video_v6(this);
-		_inter    = new Inter_Playtoons(this);
-		_mult     = new Mult_v2(this);
-		_draw     = new Draw_Playtoons(this);
-		_map      = new Map_v2(this);
-		_goblin   = new Goblin_v4(this);
-		_scenery  = new Scenery_v2(this);
+		_init = new Init_v2(this);
+		_video = new Video_v6(this);
+		_inter = new Inter_Playtoons(this);
+		_mult = new Mult_v2(this);
+		_draw = new Draw_Playtoons(this);
+		_map = new Map_v2(this);
+		_goblin = new Goblin_v4(this);
+		_scenery = new Scenery_v2(this);
 		_saveLoad = new SaveLoad_Playtoons(this, _targetName.c_str());
 		break;
 
 	case kGameTypeAdibou2:
 	case kGameTypeAdi4:
-		_init     = new Init_v7(this);
-		_video    = new Video_v6(this);
-		_inter    = new Inter_v7(this);
-		_mult     = new Mult_v2(this);
-		_draw     = new Draw_v7(this);
-		_map      = new Map_v2(this);
-		_goblin   = new Goblin_v7(this);
-		_scenery  = new Scenery_v2(this);
+		_init = new Init_v7(this);
+		_video = new Video_v6(this);
+		_inter = new Inter_v7(this);
+		_mult = new Mult_v2(this);
+		_draw = new Draw_v7(this);
+		_map = new Map_v2(this);
+		_goblin = new Goblin_v7(this);
+		_scenery = new Scenery_v2(this);
 		_saveLoad = new SaveLoad_v7(this, _targetName.c_str());
 		break;
 
 	case kGameTypeAdibou1:
 	case kGameTypeAdi2:
-		_init     = new Init_v2(this);
-		_video    = new Video_v2(this);
-		_inter    = new Inter_Adibou1(this);
-		_mult     = new Mult_v2(this);
-		_draw     = new Draw_v2(this);
-		_map      = new Map_v2(this);
-		_goblin   = new Goblin_v2(this);
-		_scenery  = new Scenery_v2(this);
+		_init = new Init_v2(this);
+		_video = new Video_v2(this);
+		_inter = new Inter_Adibou1(this);
+		_mult = new Mult_v2(this);
+		_draw = new Draw_v2(this);
+		_map = new Map_v2(this);
+		_goblin = new Goblin_v2(this);
+		_scenery = new Scenery_v2(this);
 		_saveLoad = new SaveLoad_Adibou1(this, _targetName.c_str());
 		break;
 
 	case kGameTypeAbracadabra:
-		_init     = new Init_v2(this);
-		_video    = new Video_v2(this);
-		_mult     = new Mult_v2(this);
-		_draw     = new Draw_v2(this);
-		_map      = new Map_v2(this);
-		_goblin   = new Goblin_v2(this);
-		_scenery  = new Scenery_v2(this);
-		_preGob   = new OnceUpon::Abracadabra(this);
+		_init = new Init_v2(this);
+		_video = new Video_v2(this);
+		_mult = new Mult_v2(this);
+		_draw = new Draw_v2(this);
+		_map = new Map_v2(this);
+		_goblin = new Goblin_v2(this);
+		_scenery = new Scenery_v2(this);
+		_preGob = new OnceUpon::Abracadabra(this);
 		break;
 
 	case kGameTypeBabaYaga:
-		_init     = new Init_v2(this);
-		_video    = new Video_v2(this);
-		_mult     = new Mult_v2(this);
-		_draw     = new Draw_v2(this);
-		_map      = new Map_v2(this);
-		_goblin   = new Goblin_v2(this);
-		_scenery  = new Scenery_v2(this);
-		_preGob   = new OnceUpon::BabaYaga(this);
+		_init = new Init_v2(this);
+		_video = new Video_v2(this);
+		_mult = new Mult_v2(this);
+		_draw = new Draw_v2(this);
+		_map = new Map_v2(this);
+		_goblin = new Goblin_v2(this);
+		_scenery = new Scenery_v2(this);
+		_preGob = new OnceUpon::BabaYaga(this);
 		break;
 
 	default:
@@ -687,41 +707,58 @@ Common::Error GobEngine::initGameParts() {
 }
 
 void GobEngine::deinitGameParts() {
-	delete _preGob;    _preGob = nullptr;
-	delete _saveLoad;  _saveLoad = nullptr;
-	delete _mult;      _mult = nullptr;
-	delete _vidPlayer; _vidPlayer = nullptr;
-	delete _game;      _game = nullptr;
-	delete _global;    _global = nullptr;
-	delete _goblin;    _goblin = nullptr;
-	delete _init;      _init = nullptr;
-	delete _inter;     _inter = nullptr;
-	delete _map;       _map = nullptr;
-	delete _palAnim;   _palAnim = nullptr;
-	delete _scenery;   _scenery = nullptr;
-	delete _draw;      _draw = nullptr;
-	delete _util;      _util = nullptr;
-	delete _video;     _video = nullptr;
-	delete _sound;     _sound = nullptr;
-	delete _dataIO;    _dataIO = nullptr;
+	delete _preGob;
+	_preGob = nullptr;
+	delete _saveLoad;
+	_saveLoad = nullptr;
+	delete _mult;
+	_mult = nullptr;
+	delete _vidPlayer;
+	_vidPlayer = nullptr;
+	delete _game;
+	_game = nullptr;
+	delete _global;
+	_global = nullptr;
+	delete _goblin;
+	_goblin = nullptr;
+	delete _init;
+	_init = nullptr;
+	delete _inter;
+	_inter = nullptr;
+	delete _map;
+	_map = nullptr;
+	delete _palAnim;
+	_palAnim = nullptr;
+	delete _scenery;
+	_scenery = nullptr;
+	delete _draw;
+	_draw = nullptr;
+	delete _util;
+	_util = nullptr;
+	delete _video;
+	_video = nullptr;
+	delete _sound;
+	_sound = nullptr;
+	delete _dataIO;
+	_dataIO = nullptr;
 }
 
 Common::Error GobEngine::initGraphics() {
-	if        (is800x600()) {
+	if (is800x600()) {
 		warning("GobEngine::initGraphics(): 800x600 games currently unsupported");
 		return Common::kUnsupportedGameidError;
 	} else if (is640x480()) {
-		_width  = 640;
+		_width = 640;
 		_height = 480;
-		_mode   = 0x18;
+		_mode = 0x18;
 	} else if (is640x400()) {
-		_width  = 640;
+		_width = 640;
 		_height = 400;
-		_mode   = 0x18;
+		_mode = 0x18;
 	} else {
-		_width  = 320;
+		_width = 320;
 		_height = 200;
-		_mode   = 0x14;
+		_mode = 0x14;
 	}
 
 	Graphics::ModeList modes;
@@ -735,8 +772,8 @@ Common::Error GobEngine::initGraphics() {
 
 	_pixelFormat = g_system->getScreenFormat();
 
-	_video->_surfWidth    = _width;
-	_video->_surfHeight   = _height;
+	_video->_surfWidth = _width;
+	_video->_surfHeight = _height;
 	_video->_splitHeight1 = _height;
 
 	_global->_mouseMaxX = _width;

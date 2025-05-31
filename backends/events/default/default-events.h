@@ -33,6 +33,10 @@ class VirtualKeyboard;
 class VirtualMouse;
 }
 
+namespace GUI {
+	class MgoHotspots;
+}
+
 
 class DefaultEventManager : public Common::EventManager, Common::EventObserver {
 #ifdef ENABLE_VKEYBD
@@ -42,6 +46,9 @@ class DefaultEventManager : public Common::EventManager, Common::EventObserver {
 	Common::VirtualMouse *_virtualMouse;
 
 	Common::Keymapper *_keymapper;
+
+	// MGO
+	GUI::MgoHotspots *_hotspots;
 
 	Common::ArtificialEventSource _artificialEventSource;
 

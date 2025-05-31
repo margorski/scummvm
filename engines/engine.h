@@ -26,9 +26,12 @@
 #include "common/str.h"
 #include "common/language.h"
 #include "common/platform.h"
+#include "common/rect.h"
 #include "common/queue.h"
 #include "common/singleton.h"
 #include "engines/enhancements.h"
+
+#include <vector>
 
 class OSystem;
 class MetaEngineDetection;
@@ -313,6 +316,9 @@ public:
 		 * The engine provides overrides to the quit and exit to launcher dialogs.
 		 */
 		kSupportsQuitDialogOverride,
+
+		// MGO
+		kSupportsHotspots,
 	};
 
 
@@ -402,6 +408,14 @@ public:
 	 * @todo find a better name for this
 	 */
 	virtual void syncSoundSettings();
+
+	// MGO
+	/**
+	 * Return a vector of hotspots as Common::Rect.
+	 *
+	 * By default, returns an empty vector. Engines supporting hotspots should override this.
+	 */
+	virtual std::vector<Common::Rect> mgoGetHotspots();
 
 	/**
 	 * Notify the engine that the settings editable from the Game tab in the

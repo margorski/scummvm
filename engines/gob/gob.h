@@ -28,8 +28,11 @@
 #ifndef GOB_GOB_H
 #define GOB_GOB_H
 
+
 #include "common/random.h"
+#include "common/rect.h"
 #include "common/system.h"
+#include <vector>
 
 #include "graphics/pixelformat.h"
 
@@ -176,6 +179,7 @@ private:
 	bool hasFeature(EngineFeature f) const override;
 	void pauseEngineIntern(bool pause) override;
 	void syncSoundSettings() override;
+	std::vector<Common::Rect> mgoGetHotspots() override;
 
 	Common::Error initGameParts();
 	Common::Error initGraphics();

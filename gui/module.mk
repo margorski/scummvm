@@ -13,6 +13,7 @@ MODULE_OBJS := \
 	EventRecorder.o \
 	filebrowser-dialog.o \
 	gui-manager.o \
+	hotspots.o \
 	helpdialog.o \
 	imagealbum-dialog.o \
 	launcher.o \

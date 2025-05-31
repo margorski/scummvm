@@ -35,6 +35,7 @@
 #include "engines/engine.h"
 #include "gui/debugger.h"
 #include "gui/message.h"
+#include "gui/hotspots.h"
 
 DefaultEventManager::DefaultEventManager(Common::EventSource *boss) :
 	_buttonState(0),
@@ -58,6 +59,9 @@ DefaultEventManager::DefaultEventManager(Common::EventSource *boss) :
 
 	_keymapper = new Common::Keymapper(this);
 	_dispatcher.registerMapper(_keymapper, true);
+
+	//MGO
+	_hotspots = new GUI::MgoHotspots();
 }
 
 DefaultEventManager::~DefaultEventManager() {
@@ -142,6 +146,11 @@ bool DefaultEventManager::pollEvent(Common::Event &event) {
 	case Common::EVENT_RBUTTONUP:
 		_mousePos = event.mouse;
 		_buttonState &= ~RBUTTON;
+		break;
+
+		// MGO
+	case Common::EVENT_MBUTTONDOWN:
+			event.type = Common::EVENT_TOGGLE_HOTSPOTS;
 		break;
 
 	case Common::EVENT_MAINMENU:
@@ -238,6 +247,18 @@ bool DefaultEventManager::pollEvent(Common::Event &event) {
 		Common::KeymapperDefaultBindings *backendDefaultBindings = g_system->getKeymapperDefaultBindings();
 
 		_keymapper->registerHardwareInputSet(inputSet, backendDefaultBindings);
+		break;
+	}
+
+
+	// MGO
+	case Common::EVENT_TOGGLE_HOTSPOTS: {
+		debug("MGO: EVENT_TOGGLE_HOTSPOTS OUTSIDE");
+		if (g_engine && g_engine->hasFeature(Engine::kSupportsHotspots)) {
+			debug("MGO: EVENT_TOGGLE_HOTSPOTS");
+			auto hs = g_engine->mgoGetHotspots();
+			// _hotspots->drawHotspots(hs);
+		}
 		break;
 	}
 

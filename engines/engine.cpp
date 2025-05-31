@@ -724,6 +724,9 @@ void Engine::pauseEngineIntern(bool pause) {
 	// By default, just (un)pause all digital sounds
 	_mixer->pauseAll(pause);
 }
+std::vector<Common::Rect> Engine::mgoGetHotspots() {
+	return std::vector<Common::Rect>();
+}
 
 void Engine::openMainMenuDialog() {
 	if (!_mainMenuDialog)

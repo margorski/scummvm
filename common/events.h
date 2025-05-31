@@ -115,7 +115,10 @@ enum EventType {
 
 	/** ScummVM has gained or lost focus. */
 	EVENT_FOCUS_GAINED = 36,
-	EVENT_FOCUS_LOST = 37
+	EVENT_FOCUS_LOST = 37,
+
+	// MGO
+	EVENT_TOGGLE_HOTSPOTS = 38
 };
 
 const int16 JOYAXIS_MIN = -32768;
