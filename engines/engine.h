@@ -192,6 +192,20 @@ protected:
 	 */
 	bool _showHotspots;
 
+	/**
+	 * Flag to force one redraw after hotspots are shown (e.g. after button press
+	 * re-enables the overlay), so engines that cache dirty state don't skip the
+	 * first render after the overlay was hidden.
+	 */
+	bool _hotspotForceRedraw;
+
+	/**
+	 * Mouse cursor visibility from before hotspots were shown. While hotspots
+	 * are displayed the cursor is hidden (otherwise it leaves trails over the
+	 * overlay), and this remembers the state to restore afterwards.
+	 */
+	bool _hotspotPrevCursorVisible;
+
 private:
 	/**
 	 * The associated metaengine
