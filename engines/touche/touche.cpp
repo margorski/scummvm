@@ -1573,24 +1573,24 @@ void ToucheEngine::getHotspotPositions(Common::Array< ::Graphics::HotspotInfo> &
 }
 
 void ToucheEngine::rebuildHotspotSnapshot() const {
-	_hotspotSnapshot.flag618           = _flagsTable[618];
-	_hotspotSnapshot.scrollX           = _flagsTable[614];
-	_hotspotSnapshot.scrollY           = _flagsTable[615];
+	_hotspotSnapshot.flag618 = _flagsTable[618];
+	_hotspotSnapshot.scrollX = _flagsTable[614];
+	_hotspotSnapshot.scrollY = _flagsTable[615];
 	_hotspotSnapshot.currentEpisodeNum = _currentEpisodeNum;
 	_hotspotSnapshot.hitBoxes.clear();
 	for (uint i = 0; i < _programHitBoxTable.size(); ++i) {
 		const ProgramHitBoxData &hb = _programHitBoxTable[i];
 		HotspotSnapshot::HitBoxEntry e;
-		e.item       = hb.item;
-		e.lockedTop  = hb.hitBoxes[0].top;
-		e.str        = hb.str;
+		e.item = hb.item;
+		e.lockedTop = hb.hitBoxes[0].top;
+		e.str = hb.str;
 		e.defaultStr = hb.defaultStr;
-		e.hitBox0    = hb.hitBoxes[0];
+		e.hitBox0 = hb.hitBoxes[0];
 		_hotspotSnapshot.hitBoxes.push_back(e);
 	}
 	for (int i = 0; i < NUM_KEYCHARS; ++i) {
-		_hotspotSnapshot.chars[i].num              = _keyCharsTable[i].num;
-		_hotspotSnapshot.chars[i].flags            = _keyCharsTable[i].flags;
+		_hotspotSnapshot.chars[i].num = _keyCharsTable[i].num;
+		_hotspotSnapshot.chars[i].flags = _keyCharsTable[i].flags;
 		_hotspotSnapshot.chars[i].prevBoundingRect = _keyCharsTable[i].prevBoundingRect;
 	}
 }
@@ -1601,9 +1601,9 @@ bool ToucheEngine::hotspotDirty() const {
 	const int16 scrollY = _flagsTable[615];
 
 	// Fast path: any scalar change forces a snapshot rebuild.
-	if (flag618            != _hotspotSnapshot.flag618           ||
-		scrollX            != _hotspotSnapshot.scrollX           ||
-		scrollY            != _hotspotSnapshot.scrollY           ||
+	if (flag618 != _hotspotSnapshot.flag618 ||
+		scrollX != _hotspotSnapshot.scrollX ||
+		scrollY != _hotspotSnapshot.scrollY ||
 		_currentEpisodeNum != _hotspotSnapshot.currentEpisodeNum ||
 		_programHitBoxTable.size() != _hotspotSnapshot.hitBoxes.size()) {
 		rebuildHotspotSnapshot();
@@ -1616,24 +1616,24 @@ bool ToucheEngine::hotspotDirty() const {
 
 	// Per-hitbox and per-character checks.
 	for (uint i = 0; i < _programHitBoxTable.size(); ++i) {
-		const ProgramHitBoxData &hb              = _programHitBoxTable[i];
+		const ProgramHitBoxData &hb = _programHitBoxTable[i];
 		const HotspotSnapshot::HitBoxEntry &snap = _hotspotSnapshot.hitBoxes[i];
 
-		if (hb.item            != snap.item      ||
+		if (hb.item != snap.item ||
 			hb.hitBoxes[0].top != snap.lockedTop ||
-			hb.str             != snap.str       ||
-			hb.defaultStr      != snap.defaultStr ||
-			hb.hitBoxes[0]     != snap.hitBox0) {
+			hb.str != snap.str ||
+			hb.defaultStr != snap.defaultStr ||
+			hb.hitBoxes[0] != snap.hitBox0) {
 			rebuildHotspotSnapshot();
 			return true;
 		}
 
 		if (hb.item & 0x4000) {
-			const int charIdx                    = hb.item & ~0x4000;
-			const KeyChar &kc                    = _keyCharsTable[charIdx];
+			const int charIdx = hb.item & ~0x4000;
+			const KeyChar &kc = _keyCharsTable[charIdx];
 			const HotspotSnapshot::CharEntry &cs = _hotspotSnapshot.chars[charIdx];
-			if (kc.num              != cs.num              ||
-				kc.flags            != cs.flags            ||
+			if (kc.num != cs.num ||
+				kc.flags != cs.flags ||
 				kc.prevBoundingRect != cs.prevBoundingRect) {
 				rebuildHotspotSnapshot();
 				return true;

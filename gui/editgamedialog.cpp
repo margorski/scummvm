@@ -323,7 +323,8 @@ EditGameDialog::EditGameDialog(const Common::String &domain)
 	//
 	tab->addTab(g_gui.useLowResGUI() ? _c("Misc", "lowres") : _("Misc"), "GameOptions_Misc");
 
-	ScrollContainerWidget *miscContainer = new ScrollContainerWidget(tab, "GameOptions_Misc.Container", "GameOptions_Misc_Container");
+	ScrollContainerWidget *miscContainer = new ScrollContainerWidget(tab,
+			"GameOptions_Misc.Container", "GameOptions_Misc_Container");
 	miscContainer->setBackgroundType(ThemeEngine::kWidgetBackgroundNo);
 	miscContainer->setTarget(this);
 
@@ -334,7 +335,8 @@ EditGameDialog::EditGameDialog(const Common::String &domain)
 		kEnableHotspotsCmd
 	);
 
-	_hotspotMarkerPopUpDesc = new StaticTextWidget(miscContainer, "GameOptions_Misc_Container.HotspotMarkerPopupDesc", _("Hotspot marker:"));
+	_hotspotMarkerPopUpDesc = new StaticTextWidget(miscContainer,
+			"GameOptions_Misc_Container.HotspotMarkerPopupDesc", _("Hotspot marker:"));
 	_hotspotMarkerPopUp = new PopUpWidget(miscContainer, "GameOptions_Misc_Container.HotspotMarkerPopup");
 	_hotspotMarkerPopUp->appendEntry(_("Point"), Graphics::kMarkerPoint);
 	_hotspotMarkerPopUp->appendEntry(_("Square"), Graphics::kMarkerSquare);

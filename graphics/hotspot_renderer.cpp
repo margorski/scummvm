@@ -225,9 +225,11 @@ void HotspotRenderer::drawLineWithGlow(Surface *surface, int x1, int y1, int x2,
 void HotspotRenderer::drawRectWithGlow(Surface *surface, int x, int y, int w, int h,
 		int overlayWidth, int overlayHeight, const PixelFormat &format) {
 	drawLineWithGlow(surface, x, y, x + w - 1, y, overlayWidth, overlayHeight, format, kLineThickness);
-	drawLineWithGlow(surface, x, y + h - 1, x + w - 1, y + h - 1, overlayWidth, overlayHeight, format, kLineThickness);
+	drawLineWithGlow(surface, x, y + h - 1, x + w - 1, y + h - 1,
+			overlayWidth, overlayHeight, format, kLineThickness);
 	drawLineWithGlow(surface, x, y + 1, x, y + h - 2, overlayWidth, overlayHeight, format, kLineThickness);
-	drawLineWithGlow(surface, x + w - 1, y + 1, x + w - 1, y + h - 2, overlayWidth, overlayHeight, format, kLineThickness);
+	drawLineWithGlow(surface, x + w - 1, y + 1, x + w - 1, y + h - 2,
+			overlayWidth, overlayHeight, format, kLineThickness);
 }
 
 void HotspotRenderer::drawLabelBox(Surface *surface, int x, int y, int w, int h,
