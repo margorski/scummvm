@@ -33,15 +33,27 @@ class Surface;
 struct PixelFormat;
 
 /**
+ * Classification of a hotspot by its role in the game world.
+ */
+enum HotspotType {
+	kHotspotDefault, ///< No specific type (generic / unclassified)
+	kHotspotObject,  ///< Interactable object
+	kHotspotExit,    ///< Exit or door leading to another area
+	kHotspotNPC      ///< Non-player character
+};
+
+/**
  * Information about a single hotspot to display.
  */
 struct HotspotInfo {
 	Common::Point position; ///< Position in game coordinates
 	Common::U32String name; ///< Display name
+	HotspotType type;       ///< Classification of the hotspot
 
-	HotspotInfo() {}
-	HotspotInfo(const Common::Point &pos, const Common::U32String &n)
-		: position(pos), name(n) {}
+	HotspotInfo() : type(kHotspotDefault) {}
+	HotspotInfo(const Common::Point &pos, const Common::U32String &n,
+			HotspotType t = kHotspotDefault)
+		: position(pos), name(n), type(t) {}
 };
 
 /**

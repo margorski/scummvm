@@ -51,4 +51,17 @@ public:
 		TS_ASSERT_EQUALS(info.position.y, -10);
 		TS_ASSERT_EQUALS(info.name, "Negative");
 	}
+
+	void test_default_type() {
+		Graphics::HotspotInfo info(Common::Point(0, 0), "");
+		TS_ASSERT_EQUALS(info.type, Graphics::kHotspotDefault);
+	}
+
+	void test_explicit_type() {
+		Graphics::HotspotInfo npc(Common::Point(10, 20), "Guard", Graphics::kHotspotNPC);
+		TS_ASSERT_EQUALS(npc.type, Graphics::kHotspotNPC);
+
+		Graphics::HotspotInfo obj(Common::Point(30, 40), "Door", Graphics::kHotspotExit);
+		TS_ASSERT_EQUALS(obj.type, Graphics::kHotspotExit);
+	}
 };
