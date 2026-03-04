@@ -1529,6 +1529,7 @@ void ToucheEngine::getHotspotPositions(Common::Array< ::Graphics::HotspotInfo> &
 
 		int16 str = hitBox.str;
 		int screenX, screenY;
+		::Graphics::HotspotType hotspotType;
 
 		if (hitBox.item & 0x4000) {
 			const KeyChar *keyChar = &_keyCharsTable[hitBox.item & ~0x4000];
@@ -1543,6 +1544,7 @@ void ToucheEngine::getHotspotPositions(Common::Array< ::Graphics::HotspotInfo> &
 
 			screenX = (charRect.left + charRect.right) / 2;
 			screenY = (charRect.top + charRect.bottom) / 2;
+			hotspotType = ::Graphics::kHotspotNPC;
 		} else {
 			const Common::Rect &objRect = hitBox.hitBoxes[0];
 			if (!objRect.isValidRect())
@@ -1553,6 +1555,7 @@ void ToucheEngine::getHotspotPositions(Common::Array< ::Graphics::HotspotInfo> &
 
 			screenX = centerX - scrollX;
 			screenY = centerY - scrollY;
+			hotspotType = ::Graphics::kHotspotObject;
 		}
 
 		if (screenX < 0 || screenX >= kScreenWidth || screenY < 0 || screenY >= kRoomHeight)
@@ -1565,7 +1568,7 @@ void ToucheEngine::getHotspotPositions(Common::Array< ::Graphics::HotspotInfo> &
 				name = Common::String(strData);
 		}
 
-		hotspots.push_back(::Graphics::HotspotInfo(Common::Point(screenX, screenY), name));
+		hotspots.push_back(::Graphics::HotspotInfo(Common::Point(screenX, screenY), name, hotspotType));
 	}
 }
 
