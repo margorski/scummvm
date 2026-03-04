@@ -52,7 +52,7 @@ struct HotspotInfo {
 
 	HotspotInfo() : type(kHotspotDefault) {}
 	HotspotInfo(const Common::Point &pos, const Common::U32String &n,
-			HotspotType t = kHotspotDefault)
+		HotspotType t = kHotspotDefault)
 		: position(pos), name(n), type(t) {}
 };
 
