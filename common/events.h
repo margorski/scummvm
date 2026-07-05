@@ -118,6 +118,14 @@ enum EventType {
 	EVENT_FOCUS_LOST = 37,
 
 	/**
+	 * Hotspot display, driven by a hold-to-show key. Bound as a keymapper
+	 * start/end pair (see Keymapper::convertStartToEnd), so SHOW is sent while
+	 * the key is held and HIDE when it is released.
+	 */
+	EVENT_HOTSPOTS_SHOW = 38,
+	EVENT_HOTSPOTS_HIDE = 39,
+
+	/**
 	 * We reserve some event ids for custom events.
 	 * 
 	 * This is used for example by Asylum and Bagel engines.
