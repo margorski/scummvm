@@ -25,7 +25,10 @@
  *
  */
 
+#include "common/config-manager.h"
 #include "common/str.h"
+
+#include "backends/keymapper/keymapper.h"
 
 #include "gob/hotspots.h"
 #include "gob/global.h"
@@ -33,6 +36,7 @@
 #include "gob/game.h"
 #include "gob/script.h"
 #include "gob/inter.h"
+#include "gob/video.h"
 
 namespace Gob {
 
@@ -211,6 +215,9 @@ Hotspots::Hotspots(GobEngine *vm) : _vm(vm) {
 	_currentId    = 0;
 	_currentX     = 0;
 	_currentY     = 0;
+
+	_displayNameKey = 0;
+	_harvestingDisplayNames = false;
 #ifdef USE_TTS
 	_currentHotspotTTSTextIndex = -1;
 	_hotspotSpokenLast = false;
@@ -560,7 +567,10 @@ void Hotspots::enter(uint16 index) {
 										  _vm->_game->_curTotFile, _vm->_game->_script->_currentOpcodePos,
 										  _vm->_game->_curTotFile, spot.funcEnter);
 
+		_displayNameKey = spot.funcEnter;
+		_displayNameTot = _vm->_game->_curTotFile;
 		call(spot.funcEnter);
+		_displayNameKey = 0;
 
 		_vm->_game->popGlobalCallStack();
 	}
@@ -1709,6 +1719,9 @@ void Hotspots::evaluate() {
 	for (uint16 i = 0; i < count; i++)
 		evaluateNew(i, ids, inputs, inputId, hasInput, inputCount);
 
+	if (!hasInput)
+		harvestDisplayNames();
+
 	// Recalculate all hotspots if requested
 	if (needRecalculation)
 		recalculate(true);
@@ -1728,7 +1741,9 @@ void Hotspots::evaluate() {
 
 			uint16 curInput = 0;
 
+			enableDisplayKeymap(false);
 			key = handleInputs(duration, inputCount, curInput, inputs, id, index);
+			enableDisplayKeymap(true);
 
 			// Notify the script of the current input index
 			WRITE_VAR(17 + 38, curInput);
@@ -1878,6 +1893,216 @@ int16 Hotspots::findCursor(uint16 x, uint16 y) const {
 	}
 
 	return cursor;
+}
+
+bool Hotspots::getDisplayOffset(const Hotspot &spot, int16 &deltaX, int16 &deltaY) const {
+	deltaX = 0;
+	deltaY = 0;
+
+	const uint16 window = spot.getWindow() >> 8;
+
+	if ((_vm->getGameType() != kGameTypeFascination) ||
+			!(_vm->_draw->_renderFlags & RENDERFLAG_HASWINDOWS))
+		return window == 0;
+
+	if (window == 0)
+		return _vm->_draw->_winCount == 0;
+
+	if (window >= 10)
+		return false;
+
+	const Draw::fascinWin &win = _vm->_draw->_fascinWin[window];
+	if ((win.id == -1) || (win.id != (_vm->_draw->_winCount - 1)))
+		return false;
+
+	deltaX = win.left;
+	deltaY = win.top;
+
+	return true;
+}
+
+Common::String Hotspots::displayNameKey(const Common::String &totFile, uint16 funcEnter) {
+	return Common::String::format("%s:%u", totFile.c_str(), funcEnter);
+}
+
+void Hotspots::setHoveredDisplayName(const Common::String &text) {
+	if (_displayNameKey == 0)
+		return;
+
+	Common::String name = text;
+	name.trim();
+
+	if (name.empty())
+		return;
+
+	_displayNames[displayNameKey(_displayNameTot, _displayNameKey)] = name;
+	_displayNameKey = 0;
+}
+
+void Hotspots::harvestDisplayNames() {
+	if (_harvestingDisplayNames || !ConfMan.getBool("enable_hotspots"))
+		return;
+
+	if (isDisplaySuppressed())
+		return;
+
+	Common::Array<uint16> pending;
+	for (int i = 0; (i < kHotspotCount) && !_hotspots[i].isEnd(); i++) {
+		const Hotspot &spot = _hotspots[i];
+
+		if (spot.isDisabled() || (spot.getType() == kTypeNone) || spot.isInput())
+			continue;
+
+		if ((spot.funcEnter == 0) ||
+				_displayNames.contains(displayNameKey(_vm->_game->_curTotFile, spot.funcEnter)))
+			continue;
+
+		pending.push_back(spot.funcEnter);
+	}
+
+	if (pending.empty())
+		return;
+
+	_harvestingDisplayNames = true;
+
+	const uint16 savedKey   = _currentKey;
+	const uint16 savedId    = _currentId;
+	const uint16 savedIndex = _currentIndex;
+	const uint32 savedVar17 = VAR(17);
+
+	for (uint i = 0; i < pending.size(); i++) {
+		if (_vm->_inter->_terminate || _vm->shouldQuit())
+			break;
+
+		_displayNameKey = pending[i];
+		_displayNameTot = _vm->_game->_curTotFile;
+		call(pending[i]);
+		_displayNameKey = 0;
+
+		const Common::String key = displayNameKey(_displayNameTot, pending[i]);
+		if (!_displayNames.contains(key))
+			_displayNames[key] = Common::String();
+	}
+
+	WRITE_VAR(17, savedVar17);
+	_currentKey   = savedKey;
+	_currentId    = savedId;
+	_currentIndex = savedIndex;
+
+	_harvestingDisplayNames = false;
+}
+
+Common::U32String Hotspots::getDisplayName(uint16 index) const {
+	Common::CodePage codePage = Common::kASCII;
+#ifdef USE_TTS
+	codePage = _vm->_ttsEncoding;
+#endif
+
+	const Common::String key = displayNameKey(_vm->_game->_curTotFile, _hotspots[index].funcEnter);
+	if (_displayNames.contains(key))
+		return _displayNames.getVal(key).decode(codePage);
+
+#ifdef USE_TTS
+	for (uint i = 0; i < _hotspotTTSText.size(); i++)
+		if (_hotspotTTSText[i].hotspot == (int16) index)
+			return _hotspotTTSText[i].str.decode(codePage);
+#endif
+
+	return Common::U32String();
+}
+
+Graphics::HotspotType Hotspots::getDisplayType(const Hotspot &spot) {
+	if (spot.isInput())
+		return Graphics::kHotspotDefault;
+
+	return Graphics::kHotspotObject;
+}
+
+bool Hotspots::isDisplaySuppressed() const {
+	// A pushed set with hotspots of its own means the current block is a menu
+	// or dialog covering a screen that has its own, now unreachable, hotspots
+	if (_stack.empty())
+		return false;
+
+	const StackEntry &covered = _stack.top();
+	for (uint32 i = 0; i < covered.size; i++) {
+		const Hotspot &spot = covered.hotspots[i];
+
+		if (!spot.isDisabled() && (spot.getType() != kTypeNone) && (spot.funcEnter != 0))
+			return true;
+	}
+
+	return false;
+}
+
+void Hotspots::getDisplayHotspots(Common::Array<Graphics::HotspotInfo> &hotspots) const {
+	if (isDisplaySuppressed())
+		return;
+
+	const int16 offsetX = _vm->_video->_screenDeltaX - _vm->_video->_scrollOffsetX;
+	const int16 offsetY = _vm->_video->_screenDeltaY - _vm->_video->_scrollOffsetY;
+	const int16 viewportHeight = _vm->_height - _vm->_video->_splitHeight2;
+
+	for (int i = 0; (i < kHotspotCount) && !_hotspots[i].isEnd(); i++) {
+		const Hotspot &spot = _hotspots[i];
+
+		if (spot.isDisabled() || (spot.getType() == kTypeNone))
+			continue;
+
+		int16 windowX = 0;
+		int16 windowY = 0;
+		if (!getDisplayOffset(spot, windowX, windowY))
+			continue;
+
+		const int16 left   = (int16) spot.left;
+		const int16 top    = (int16) spot.top;
+		const int16 right  = (int16) spot.right;
+		const int16 bottom = (int16) spot.bottom;
+
+		if ((right < left) || (bottom < top))
+			continue;
+
+		const Common::Point center(((left + right) / 2) + windowX + offsetX,
+				((top + bottom) / 2) + windowY + offsetY);
+
+		if ((center.x < 0) || (center.x >= _vm->_width) ||
+				(center.y < 0) || (center.y >= viewportHeight))
+			continue;
+
+		const Common::U32String name = getDisplayName(i);
+		if (name.empty())
+			continue;
+
+		hotspots.push_back(Graphics::HotspotInfo(center, name, getDisplayType(spot)));
+	}
+}
+
+bool Hotspots::displayHotspotsChanged() const {
+	Common::Array<Graphics::HotspotInfo> current;
+	getDisplayHotspots(current);
+
+	bool changed = current.size() != _displaySnapshot.size();
+	for (uint i = 0; !changed && (i < current.size()); i++)
+		changed = (current[i].position != _displaySnapshot[i].position) ||
+				(current[i].type != _displaySnapshot[i].type) ||
+				(current[i].name != _displaySnapshot[i].name);
+
+	if (changed)
+		_displaySnapshot = current;
+
+	return changed;
+}
+
+void Hotspots::enableDisplayKeymap(bool enable) {
+	Common::Keymapper *keymapper = g_system->getEventManager()->getKeymapper();
+	if (!keymapper)
+		return;
+
+	if (!enable)
+		// The release of the binding would never arrive while the keymap is off
+		_vm->showHotspots(false);
+
+	keymapper->setGameKeymapState(kHotspotsKeymapId, enable);
 }
 
 void Hotspots::createButton() {

@@ -32,6 +32,10 @@
 
 #include "common/translation.h"
 
+#include "backends/keymapper/action.h"
+#include "backends/keymapper/keymap.h"
+#include "backends/keymapper/standard-actions.h"
+
 #include "gob/gameidtotype.h"
 #include "gob/gob.h"
 
@@ -80,7 +84,26 @@ public:
 	const ADExtraGuiOptionsMap *getAdvancedExtraGuiOptions() const override {
 		return optionsList;
 	}
+
+	Common::KeymapArray initKeymaps(const char *target) const override;
 };
+
+Common::KeymapArray GobMetaEngine::initKeymaps(const char *target) const {
+	using namespace Common;
+
+	KeymapArray keymaps = MetaEngine::initKeymaps(target);
+
+	Keymap *hotspotKeyMap = new Keymap(Keymap::kKeymapTypeGame, Gob::kHotspotsKeymapId, _("Hotspot display"));
+
+	Action *act = new Action(kStandardActionToggleHotspots, _("Show hotspots"));
+	act->setEvent(EVENT_HOTSPOTS_SHOW);
+	act->addDefaultInputMapping("h");
+	hotspotKeyMap->addAction(act);
+
+	keymaps.push_back(hotspotKeyMap);
+
+	return keymaps;
+}
 
 bool GobMetaEngine::hasFeature(MetaEngineFeature f) const {
 	return false;

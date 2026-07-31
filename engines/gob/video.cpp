@@ -275,7 +275,7 @@ void Video::setSize(Graphics::PixelFormat *trueColorFormat) {
 
 void Video::retrace(bool mouse) {
 	if (mouse)
-		CursorMan.showMouse((_vm->_draw->_showCursor & 6) != 0);
+		CursorMan.showMouse(!_vm->isHotspotDisplayShown() && ((_vm->_draw->_showCursor & 6) != 0));
 
 	if (_vm->_global->_primarySurfDesc) {
 		int screenX = _screenDeltaX;

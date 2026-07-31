@@ -390,9 +390,7 @@ void Draw_v2::printTotText(int16 id) {
 	_backColor = 0;
 	_transparency = 1;
 
-#ifdef USE_TTS
 	Common::String ttsMessage;
-#endif
 	while (true) {
 		if ((((*ptr >= 1) && (*ptr <= 7)) || (*ptr == 10)) && (strPos != 0)) {
 			str[MAX(strPos, strPos2)] = 0;
@@ -427,10 +425,8 @@ void Draw_v2::printTotText(int16 id) {
 				_fontIndex   = fontIndex;
 				_frontColor  = frontColor;
 				_textToPrint = str;
-#ifdef USE_TTS
 				ttsMessage += _textToPrint;
 				ttsMessage += " ";
-#endif
 
 				if (isSubtitle) {
 					_fontIndex  = _subtitleFont;
@@ -625,6 +621,9 @@ void Draw_v2::printTotText(int16 id) {
 			break;
 		}
 	}
+
+	if (!isSubtitle)
+		_vm->_game->_hotspots->setHoveredDisplayName(ttsMessage);
 
 #ifdef USE_TTS
 	if (_previousTot != ttsMessage && !isSubtitle) {

@@ -135,6 +135,9 @@ class PreGob;
 #define VAR(var)                    READ_VAR_UINT32(var)
 
 
+/** ID of the keymap holding the hotspot display action. */
+extern const char *const kHotspotsKeymapId;
+
 // WARNING: Reordering these will invalidate save games!
 enum Endianness {
 	kEndiannessLE,
@@ -179,6 +182,8 @@ private:
 	bool hasFeature(EngineFeature f) const override;
 	void pauseEngineIntern(bool pause) override;
 	void syncSoundSettings() override;
+	void getHotspotPositions(Common::Array<Graphics::HotspotInfo> &hotspots) override;
+	bool hotspotDirty() const override;
 
 	Common::Error initGameParts();
 	Common::Error initGraphics();
@@ -238,6 +243,11 @@ public:
 	void validateVideoMode(int16 videoMode);
 
 	void pauseGame();
+
+	/** Redraw the hotspot display overlay, if it is currently shown. */
+	void updateHotspotDisplay();
+	/** Is the hotspot display overlay currently shown? */
+	bool isHotspotDisplayShown() const;
 
 #ifdef USE_TTS
 	void sayText(const Common::String &text, Common::TextToSpeechManager::Action action = Common::TextToSpeechManager::INTERRUPT) const;

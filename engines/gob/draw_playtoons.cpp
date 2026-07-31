@@ -239,9 +239,7 @@ void Draw_Playtoons::printTotText(int16 id) {
 	if (_vm->_game->_script->getVersionMinor() >= 4)
 		totTextInfos.resize(32);
 
-#ifdef USE_TTS
 	Common::String ttsMessage;
-#endif
 	while (true) {
 		if ((((*ptr >= 1) && (*ptr <= 7)) || (*ptr == 10)) && (strPos != 0)) {
 			str[MAX(strPos, strPos2)] = 0;
@@ -303,10 +301,8 @@ void Draw_Playtoons::printTotText(int16 id) {
 				_fontIndex   = fontIndex;
 				_frontColor  = frontColor + _colorOffset;
 				_textToPrint = str;
-#ifdef USE_TTS
 				ttsMessage += _textToPrint;
 				ttsMessage += " ";
-#endif
 
 				if (isSubtitle) {
 					_fontIndex  = _subtitleFont;
@@ -587,6 +583,9 @@ void Draw_Playtoons::printTotText(int16 id) {
 						   totTextInfo.fontIndex, totTextInfo.color, strPos + 1);
 		}
 	}
+
+	if (!isSubtitle)
+		_vm->_game->_hotspots->setHoveredDisplayName(ttsMessage);
 
 #ifdef USE_TTS
 	if (_previousTot != ttsMessage && !isSubtitle) {

@@ -162,6 +162,8 @@ void Util::processInput(bool scroll) {
 		if ((_vm->getGameType() == kGameTypeGob3) && _vm->isCurrentTot("EMAP1008.TOT"))
 			_vm->_game->evaluateScroll();
 	}
+
+	_vm->updateHotspotDisplay();
 }
 
 void Util::clearKeyBuf() {

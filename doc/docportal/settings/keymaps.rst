@@ -249,7 +249,14 @@ Left
 Right
 	*keymap_engine-default_RIGHT*
 
-.. _hotspots:
+Engine keymaps
+********************
+
+The following actions are defined by the engines themselves, in their own keymaps. The configuration key is *keymap_<keymap ID>_<action ID>*, where the keymap ID is chosen by the engine.
+
+.. _HOTS:
 
 Show hotspots
-	*keymap_engine-default_HOTS*
+	Shows a marker on each interactive object in the current scene, for as long as the key or button is held down. Only available in engines that support hotspot display, and only when :ref:`Enable hotspot display <enablehotspots>` is turned on for the game. For example, the key is *keymap_game-shortcuts_HOTS* in Touche, *keymap_macs2_HOTS* in MACS2 and *keymap_gob-hotspots_HOTS* in Gob.
+
+	*keymap_<keymap ID>_HOTS*

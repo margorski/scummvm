@@ -233,9 +233,7 @@ void Draw_v1::printTotText(int16 id) {
 	}
 	ptrEnd++;
 
-#ifdef USE_TTS
 	Common::String ttsMessage;
-#endif
 	while (*ptr != 1) {
 		cmd = *ptr;
 		if (cmd == 3) {
@@ -284,10 +282,8 @@ void Draw_v1::printTotText(int16 id) {
 			}
 
 			_textToPrint = buf;
-#ifdef USE_TTS
 			ttsMessage += _textToPrint;
 			ttsMessage += " ";
-#endif
 
 			destSpriteX = _destSpriteX;
 			spriteOperation(DRAW_PRINTTEXT, false);
@@ -311,6 +307,8 @@ void Draw_v1::printTotText(int16 id) {
 			ptr++;
 		}
 	}
+
+	_vm->_game->_hotspots->setHoveredDisplayName(ttsMessage);
 
 #ifdef USE_TTS
 	if (_previousTot != ttsMessage) {

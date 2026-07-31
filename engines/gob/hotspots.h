@@ -28,7 +28,10 @@
 #ifndef GOB_HOTSPOTS_H
 #define GOB_HOTSPOTS_H
 
+#include "common/hash-str.h"
 #include "common/stack.h"
+
+#include "graphics/hotspot_renderer.h"
 
 #include "gob/util.h"
 
@@ -102,6 +105,13 @@ public:
 
 	/** Return the cursor found in the hotspot to the coordinates. */
 	int16 findCursor(uint16 x, uint16 y) const;
+
+	/** Collect the currently clickable hotspots for the hotspot display overlay. */
+	void getDisplayHotspots(Common::Array<Graphics::HotspotInfo> &hotspots) const;
+	/** Did the hotspots collected for the display overlay change since the last check? */
+	bool displayHotspotsChanged() const;
+	/** Remember text the game just printed as the name of the hotspot below the cursor. */
+	void setHoveredDisplayName(const Common::String &text);
 
 	/** implementation of oPlaytoons_F_1B code*/
 	void createButton();
@@ -210,6 +220,12 @@ private:
 	uint16 _currentX;
 	uint16 _currentY;
 
+	mutable Common::Array<Graphics::HotspotInfo> _displaySnapshot;
+	Common::StringMap _displayNames;
+	Common::String _displayNameTot;
+	uint16 _displayNameKey;
+	bool _harvestingDisplayNames;
+
 #ifdef USE_TTS
 	Common::String _previousSaid;
 	bool _hotspotSpokenLast;
@@ -238,6 +254,23 @@ private:
 
 	/** Check whether a specific part of the window forces a certain cursor. */
 	int16 windowCursor(int16 &dx, int16 &dy) const;
+
+	/** Cache key identifying a hotspot's enter function within its TOT file. */
+	static Common::String displayNameKey(const Common::String &totFile, uint16 funcEnter);
+	/** Is a menu or dialog covering a screen that has hotspots of its own? */
+	bool isDisplaySuppressed() const;
+	/** Is this hotspot visible on screen, and where is its window anchored? */
+	bool getDisplayOffset(const Hotspot &spot, int16 &deltaX, int16 &deltaY) const;
+	/** Which name should the display overlay put next to this hotspot? */
+	Common::U32String getDisplayName(uint16 index) const;
+	/** How should the display overlay classify this hotspot? */
+	static Graphics::HotspotType getDisplayType(const Hotspot &spot);
+
+	/** Enable or disable the keymap holding the hotspot display action. */
+	void enableDisplayKeymap(bool enable);
+
+	/** Run the enter function of every new hotspot once, to learn its name. */
+	void harvestDisplayNames();
 
 	/** Which hotspot is the mouse cursor currently at? */
 	uint16 checkMouse(Type type, uint16 &id, uint16 &index) const;

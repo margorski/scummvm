@@ -62,6 +62,8 @@
 
 namespace Gob {
 
+const char *const kHotspotsKeymapId = "gob-hotspots";
+
 #define MAX_TIME_DELTA 100
 
 const Common::Language GobEngine::_gobToScummVMLang[] = {
@@ -459,6 +461,26 @@ void GobEngine::pauseGame() {
 	pauseDialog.runModal();
 
 	pauseEngineIntern(false);
+}
+
+void GobEngine::getHotspotPositions(Common::Array<Graphics::HotspotInfo> &hotspots) {
+	if (_game && _game->_hotspots)
+		_game->_hotspots->getDisplayHotspots(hotspots);
+}
+
+bool GobEngine::hotspotDirty() const {
+	if (!_game || !_game->_hotspots)
+		return false;
+
+	return _game->_hotspots->displayHotspotsChanged();
+}
+
+void GobEngine::updateHotspotDisplay() {
+	drawHotspots();
+}
+
+bool GobEngine::isHotspotDisplayShown() const {
+	return _showHotspots;
 }
 
 #ifdef USE_TTS
